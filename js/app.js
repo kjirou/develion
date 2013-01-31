@@ -32,7 +32,10 @@ $a = {
   game: undefined,
   screen: undefined,
   statusbar: undefined,
+  field: undefined,
   hand: undefined,
+  deck: undefined,
+  talon: undefined,
 
   $cards: {},
 
@@ -192,6 +195,10 @@ $a.Game = (function(){
     return this._baseCoin + this._modCoin;
   }
 
+  cls.prototype.getTotalCardCount = function(){
+    return $a.hand.getCards().count() + $a.deck.count() + $a.talon.count();
+  }
+
   cls.create = function(){
     var obj = new this();
     __INITIALIZE(obj);
@@ -236,7 +243,16 @@ $a.Cards = (function(){
     this._cards = _.shuffle(this._cards);
   }
 
+  cls.prototype.count = function(){
+    return this._cards.length;
+  }
+
   cls.prototype.dealTo = function(cards, count){
+    var self = this;
+    _.times(count, function(){
+      var card = self.pop();
+      cards.add(card);
+    });
   }
 
   cls.create = function(){
@@ -305,10 +321,68 @@ $a.Statusbar = (function(){
     t += $f.format(', 行動回数: {0}', $a.game.getActionCount());
     t += $f.format(', 開発回数: {0}', $a.game.getBuyCount());
     t += $f.format(', 開発力: {0}', $a.game.getCoin());
-    t += ', 山札: 00/00';
+    t += $f.format(', 山札: {0}/{1}', $a.deck.count(), $a.game.getTotalCardCount());
     t += ', フェーズ: 行動';
     this._view.text(t);
   }
+
+  cls.create = function(){
+    var obj = $a.Sprite.create.apply(this);
+    __INITIALIZE(obj);
+    return obj;
+  };
+
+  return cls;
+//}}}
+}());
+
+
+$a.Field = (function(){
+//{{{
+  var cls = function(){
+    this._cards = $a.Cards.create();
+  }
+  $f.inherit(cls, new $a.Sprite(), $a.Sprite);
+
+  cls.POS = [32, 0];
+  cls.SIZE = [$a.Screen.SIZE[0], 268];
+
+  cls.__SALES_CARDS = [
+    'Score1Card',
+    'Score3Card',
+    'Score6Card',
+    'ReorganizationCard',
+    'ObjectorientedCard',
+    'HealthCard',
+    'ModularizationCard',
+    'ScalabilityCard',
+    'LeadershipCard'//,
+  ]
+
+  function __INITIALIZE(self){
+    self._view.css({
+    });
+
+    self._cards = $a.Cards.create();
+    _.each(cls.__SALES_CARDS, function(cardClassName){
+      self._cards.createCard(cardClassName);
+    });
+
+    var coords = $f.squaring($a.Card.SIZE, cls.SIZE, 10);
+    _.each(self._cards.getData(), function(card, idx){
+      card.setPos(coords[idx]);
+      card.draw();
+      self.getView().append(card.getView());
+    });
+  }
+
+  //cls.prototype.draw = function(){
+  //  $a.Sprite.prototype.draw.apply(this);
+  //}
+
+  //cls.prototype.getCards = function(){
+  //  return this._cards;
+  //}
 
   cls.create = function(){
     var obj = $a.Sprite.create.apply(this);
@@ -331,20 +405,11 @@ $a.Hand = (function(){
   cls.POS = [300, 0];
   cls.SIZE = [$a.Screen.SIZE[0], 300];
 
-  cls.__INITIAL_CARD_CLASSES = [
-    'Coin1Card', 'Coin1Card', 'Coin1Card', 'Coin1Card', 'Coin1Card', 'Coin1Card', 'Coin1Card',
-    'Score1Card', 'Score1Card', 'Score1Card'//,
-  ];
-
   function __INITIALIZE(self){
     self._view.css({
     });
 
     self._cards = $a.Cards.create();
-    _.each(cls.__INITIAL_CARD_CLASSES, function(cardClassName){
-      self._cards.createCard(cardClassName);
-    });
-    self._cards.shuffle();
   }
 
   cls.prototype.draw = function(){
@@ -359,6 +424,10 @@ $a.Hand = (function(){
       card.draw();
       self.getView().append(card.getView());
     });
+  }
+
+  cls.prototype.getCards = function(){
+    return this._cards;
   }
 
   cls.create = function(){
@@ -379,6 +448,7 @@ $a.Card = (function(){
     this._description = null;
     this._cost = 0;
     this._score = 0;
+    this._card = 0;
     this._actionCount = 0;
     this._buyCount = 0;
     this._coin = 0;
@@ -390,13 +460,13 @@ $a.Card = (function(){
 
   function __INITIALIZE(self){
     self._view.css({
-      fontSize: $a.fontSize(12),
       backgroundColor: '#FFFF00'
     }).addClass($c.CSS_PREFIX + 'card');
 
     self._titleView = $('<div />').css({
       width: cls.SIZE[0],
       height: 20,
+      fontSize: $a.fontSize(12),
       lineHeight: '20px',
       textAlign: 'center'//,
     }).appendTo(self._view);
@@ -406,7 +476,8 @@ $a.Card = (function(){
       marginLeft: 5,
       width: cls.SIZE[0] - 10,
       height: 90,
-      lineHeight: '20px',
+      fontSize: $a.fontSize(10),
+      lineHeight: '15px',
       textAlign: 'left'//,
     }).appendTo(self._view);
   }
@@ -426,19 +497,21 @@ $a.Card = (function(){
   cls.prototype._createDescriptionText = function(){
     var lines = [];
 
-    lines.push($f.format('コスト:{0}', this._cost));
-
-    if (this._score !== 0) {
-      lines.push($f.format('進捗:{0}', this._score));
-    }
-    if (this._coin !== 0) {
-      lines.push($f.format('開発力:{0}', this._coin));
+    lines.push($f.format('コスト: {0}', this._cost));
+    if (this._card !== 0) {
+      lines.push($f.format('カード: {0}', this._card));
     }
     if (this._actionCount !== 0) {
-      lines.push($f.format('行動回数:{0}', this._actionCount));
+      lines.push($f.format('行動回数: {0}', this._actionCount));
     }
     if (this._buyCount !== 0) {
-      lines.push($f.format('開発回数:{0}', this._buyCount));
+      lines.push($f.format('開発回数: {0}', this._buyCount));
+    }
+    if (this._coin !== 0) {
+      lines.push($f.format('開発力: {0}', this._coin));
+    }
+    if (this._score !== 0) {
+      lines.push($f.format('進捗: {0}', this._score));
     }
     return lines.join('\n');
   }
@@ -460,21 +533,36 @@ $a.init = function(){
   $a.player = $a.Player.create();
   $a.game = $a.Game.create();
 
+  $a.deck = $a.Cards.create();
+  var initialDeck = [
+    'Coin1Card', 'Coin1Card', 'Coin1Card', 'Coin1Card', 'Coin1Card', 'Coin1Card', 'Coin1Card',
+    'Score1Card', 'Score1Card', 'Score1Card'//,
+  ];
+  _.each(initialDeck, function(cardClassName){
+    $a.deck.createCard(cardClassName);
+  });
+  $a.deck.shuffle();
+
+  $a.talon = $a.Cards.create();
+
   $a.screen = $a.Screen.create();
   $a.screen.draw();
   $('#game_container').append($a.screen.getView());
 
   $a.statusbar = $a.Statusbar.create();
-  $a.statusbar.draw();
   $a.screen.getView().append($a.statusbar.getView());
 
+  $a.field = $a.Field.create();
+  $a.field.draw();
+  $a.screen.getView().append($a.field.getView());
+
   $a.hand = $a.Hand.create();
-  $a.hand.draw();
   $a.screen.getView().append($a.hand.getView());
 
-  var c1 = $a.$cards.Coin1Card.create();
-  c1.draw();
-  $a.hand.getView().append(c1.getView());
+  $a.deck.dealTo($a.hand.getCards(), 5);
+  $a.hand.draw();
+
+  $a.statusbar.draw();
 
 //}}}
 }
