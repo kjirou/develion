@@ -203,6 +203,53 @@ $a.Game = (function(){
 }());
 
 
+$a.Cards = (function(){
+//{{{
+  var cls = function(){
+    this._cards = [];
+  }
+
+  function __INITIALIZE(self){
+  }
+
+  cls.prototype.getData = function(){
+    return this._cards;
+  }
+
+  cls.prototype.createCard = function(cardClassName){
+    var card = $a.$cards[cardClassName].create();
+    this._cards.push(card);
+  }
+
+  cls.prototype.add = function(card){
+    this._cards.push(card);
+  }
+
+  cls.prototype.pop = function(){
+    return this._cards.pop();
+  }
+
+  cls.prototype.remove = function(card){
+  }
+
+  cls.prototype.shuffle = function(){
+    this._cards = _.shuffle(this._cards);
+  }
+
+  cls.prototype.dealTo = function(cards, count){
+  }
+
+  cls.create = function(){
+    var obj = new this();
+    __INITIALIZE(obj);
+    return obj;
+  }
+
+  return cls;
+//}}}
+}());
+
+
 $a.Screen = (function(){
 //{{{
   var cls = function(){
@@ -277,19 +324,41 @@ $a.Statusbar = (function(){
 $a.Hand = (function(){
 //{{{
   var cls = function(){
+    this._cards = undefined;
   }
   $f.inherit(cls, new $a.Sprite(), $a.Sprite);
 
   cls.POS = [300, 0];
   cls.SIZE = [$a.Screen.SIZE[0], 300];
 
+  cls.__INITIAL_CARD_CLASSES = [
+    'Coin1Card', 'Coin1Card', 'Coin1Card', 'Coin1Card', 'Coin1Card', 'Coin1Card', 'Coin1Card',
+    'Score1Card', 'Score1Card', 'Score1Card'//,
+  ];
+
   function __INITIALIZE(self){
     self._view.css({
     });
+
+    self._cards = $a.Cards.create();
+    _.each(cls.__INITIAL_CARD_CLASSES, function(cardClassName){
+      self._cards.createCard(cardClassName);
+    });
+    self._cards.shuffle();
   }
 
   cls.prototype.draw = function(){
+    var self = this;
     $a.Sprite.prototype.draw.apply(this);
+
+    var coords = $f.squaring($a.Card.SIZE, cls.SIZE, 10);
+
+    _.each(this._cards.getData(), function(card, idx){
+      card.getView().remove();
+      card.setPos(coords[idx]);
+      card.draw();
+      self.getView().append(card.getView());
+    });
   }
 
   cls.create = function(){
@@ -323,7 +392,7 @@ $a.Card = (function(){
     self._view.css({
       fontSize: $a.fontSize(12),
       backgroundColor: '#FFFF00'
-    });
+    }).addClass($c.CSS_PREFIX + 'card');
 
     self._titleView = $('<div />').css({
       width: cls.SIZE[0],
