@@ -1,4 +1,3 @@
-// vim: set foldmethod=marker :
 /**
  * Develion
  *
@@ -162,6 +161,8 @@ $a.Game = (function(){
 
     this._turn = 0;
     this._maxTurn = 10;
+    /** 'action' || 'buy' */
+    this._currentPhaseType = 'action';
 
     this._actionCount = undefined;
     this._buyCount = undefined;
@@ -198,9 +199,13 @@ $a.Game = (function(){
     var self = this;
     var d = $.Deferred();
     $.Deferred().resolve().then(function(){
+      self._currentPhaseType = 'action';
+      $a.statusbar.draw();
       return self._runActionPhase();
     }).then(function(){
       $d('Ended action phase');
+      self._currentPhaseType = 'buy';
+      $a.statusbar.draw();
       return self._runBuyPhase();
     }).then(function(){
       $d('Ended buy phase');
@@ -329,6 +334,8 @@ $a.Game = (function(){
 
   cls.prototype.getTurn = function(){ return this._turn; }
   cls.prototype.getMaxTurn = function(){ return this._maxTurn; }
+
+  cls.prototype.getCurrentPhaseType = function(){ return this._currentPhaseType }
 
   cls.prototype._mergePlayersCardData = function(){
     var cards = [];
@@ -522,7 +529,8 @@ $a.Statusbar = (function(){
     t += $f.format(', 開発回数: {0}', $a.game.getBuyCount());
     t += $f.format(', 開発力: {0}', $a.game.getCoin());
     t += $f.format(', 山札: {0}/{1}', $a.deck.count(), $a.game.getTotalCardCount());
-    t += ', フェーズ: 行動';
+    var phaseText = ($a.game.getCurrentPhaseType() === 'action')? '行動': '開発';
+    t += $f.format(', フェーズ: {0}', phaseText);
     this._view.text(t);
   }
 
@@ -571,7 +579,10 @@ $a.Field = (function(){
 
     var coords = $f.squaring($a.Card.SIZE, cls.SIZE, 10);
     _.each(self._cards.getData(), function(card, idx){
-      card.setPos(coords[idx]);
+      card.setPos([
+        coords[idx][0] + 20,
+        coords[idx][1] + 20
+      ]);
       card.draw();
       self.getView().append(card.getView());
     });
@@ -599,10 +610,13 @@ $a.Hand = (function(){
   }
   $f.inherit(cls, new $a.Sprite(), $a.Sprite);
 
-  cls.POS = [300, 0];
-  cls.SIZE = [$a.Screen.SIZE[0], 300];
+  cls.POS = [330, 20];
+  cls.SIZE = [710, 250];
 
   function __INITIALIZE(self){
+    self._view.css({
+      backgroundColor: '#e0ffff'
+    });
   }
 
   cls.prototype.draw = function(){
@@ -673,6 +687,10 @@ $a.Hand = (function(){
 $a.Card = (function(){
 //{{{
   var cls = function(){
+    /** Array of 'victory', 'treasure', 'action', 'reaction', 'attack'.
+      Currently used 'victory' or 'treasure' or 'action', and always only one. */
+    this._cardTypes = undefined;
+
     this._title = undefined;
     this._description = null;
     this._cost = 0;
@@ -698,9 +716,8 @@ $a.Card = (function(){
 
     self.className = $f.getMyName($a.$cards, self.__myClass__);
 
-    self._view.css({
-        backgroundColor: '#FFFF00'
-      }).addClass($c.CSS_PREFIX + 'card')
+    self._view
+      .addClass($c.CSS_PREFIX + 'card')
       .on('mousedown', {self:self}, __ONMOUSEDOWN);
 
     self._titleView = $('<div />').css({
@@ -725,6 +742,15 @@ $a.Card = (function(){
   cls.prototype.draw = function(){
     $a.Sprite.prototype.draw.apply(this);
 
+    var bgColor;
+    if (this.getCardType() === 'victory') {
+      bgColor = '#76bc75';
+    } else if (this.getCardType() === 'treasure') {
+      bgColor = '#f9ca58';
+    } else if (this.getCardType() === 'action') {
+      bgColor = '#839c9d';
+    }
+
     this._titleView.text(this._title);
 
     if (this._description === null) {
@@ -732,6 +758,10 @@ $a.Card = (function(){
     } else {
       this._descriptionView.html($f.nl2br($f.escapeHTML(this._description)));
     }
+
+    this._view.css({
+      backgroundColor: bgColor
+    });
   }
 
   cls.prototype._createDescriptionText = function(){
@@ -780,6 +810,11 @@ $a.Card = (function(){
     $a.game.modifyBuyCount(this._buyCount);
     $a.game.modifyCoinCorrection(this._coinCorrection);
     return $.Deferred().resolve();
+  }
+
+  cls.prototype.getCardType = function(){
+    // Card types are currently always only one
+    return this._cardTypes[0];
   }
 
   cls.prototype.getCost = function(){ return this._cost; }

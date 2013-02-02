@@ -1,6 +1,7 @@
 $a.$cards.Coin1Card = (function(){
 //{{{
   var cls = function(){
+    this._cardTypes = ['treasure'];
     this._title = 'コーダー';
     this._coin = 1;
   }
@@ -13,6 +14,7 @@ $a.$cards.Coin1Card = (function(){
 $a.$cards.Coin2Card = (function(){
 //{{{
   var cls = function(){
+    this._cardTypes = ['treasure'];
     this._title = 'プログラマー';
     this._cost = 3;
     this._coin = 2;
@@ -26,6 +28,7 @@ $a.$cards.Coin2Card = (function(){
 $a.$cards.Coin3Card = (function(){
 //{{{
   var cls = function(){
+    this._cardTypes = ['treasure'];
     this._title = 'ハッカー';
     this._cost = 6;
     this._coin = 3;
@@ -39,6 +42,7 @@ $a.$cards.Coin3Card = (function(){
 $a.$cards.Score1Card = (function(){
 //{{{
   var cls = function(){
+    this._cardTypes = ['victory'];
     this._title = '小機能';
     this._cost = 2;
     this._score = 1;
@@ -52,6 +56,7 @@ $a.$cards.Score1Card = (function(){
 $a.$cards.Score3Card = (function(){
 //{{{
   var cls = function(){
+    this._cardTypes = ['victory'];
     this._title = '中機能';
     this._cost = 5;
     this._score = 3;
@@ -65,6 +70,7 @@ $a.$cards.Score3Card = (function(){
 $a.$cards.Score6Card = (function(){
 //{{{
   var cls = function(){
+    this._cardTypes = ['victory'];
     this._title = '大機能';
     this._cost = 8;
     this._score = 6;
@@ -78,6 +84,7 @@ $a.$cards.Score6Card = (function(){
 $a.$cards.ReorganizationCard = (function(){
 //{{{
   var cls = function(){
+    this._cardTypes = ['action'];
     this._title = '配置換え';
     this._description = 'コスト: 2\n行動回数: 1\n任意の枚数を捨て同数カードを引く';
     this._cost = 2;
@@ -93,6 +100,7 @@ $a.$cards.ReorganizationCard = (function(){
 $a.$cards.ObjectorientedCard = (function(){
 //{{{
   var cls = function(){
+    this._cardTypes = ['action'];
     this._title = 'OOP';
     this._cost = 3;
     this._coinCorrection = 2;
@@ -108,6 +116,7 @@ $a.$cards.ObjectorientedCard = (function(){
 $a.$cards.HealthcontrolCard = (function(){
 //{{{
   var cls = function(){
+    this._cardTypes = ['action'];
     this._title = '体調管理';
     this._cost = 3;
     this._card = 1;
@@ -124,6 +133,7 @@ $a.$cards.HealthcontrolCard = (function(){
 $a.$cards.ModularizationCard = (function(){
 //{{{
   var cls = function(){
+    this._cardTypes = ['action'];
     this._title = 'モジュール化';
     this._description = 'コスト: 3\n4コストまでのカードを獲得';
     this._cost = 3;
@@ -138,6 +148,7 @@ $a.$cards.ModularizationCard = (function(){
 $a.$cards.ScalabilityCard = (function(){
 //{{{
   var cls = function(){
+    this._cardTypes = ['action'];
     this._title = '大規模対応';
     this._cost = 4;
     this._card = 3;
@@ -152,6 +163,7 @@ $a.$cards.ScalabilityCard = (function(){
 $a.$cards.Senseofresponsibility = (function(){
 //{{{
   var cls = function(){
+    this._cardTypes = ['action'];
     this._title = '責任感';
     this._cost = 5;
     this._card = 1;
