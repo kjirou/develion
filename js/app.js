@@ -29,12 +29,13 @@ $a = {
 //{{{
   player: undefined,
   game: undefined,
+  deck: undefined,
+  talon: undefined,
+  trash: undefined,
   screen: undefined,
   statusbar: undefined,
   field: undefined,
   hand: undefined,
-  deck: undefined,
-  talon: undefined,
 
   $cards: {},
 
@@ -169,9 +170,7 @@ $a.Game = (function(){
   }
 
   function __INITIALIZE(self){
-    self.resetActionCount();
-    self.resetBuyCount();
-    self.resetCoinCorrection();
+    self._resetStatuses();
   }
 
   cls.prototype.run = function(){
@@ -186,9 +185,11 @@ $a.Game = (function(){
       return self._runBuyPhase();
     }).then(function(){
       $d('Ended buy phase');
+      self._resetStatuses();
+      $a.hand.resetCards();
+      $a.statusbar.draw();
+      $a.hand.draw();
     });
-
-    // 行動回数などの初期化処理
   }
 
   cls.prototype._runActionPhase = function(){
@@ -311,23 +312,20 @@ $a.Game = (function(){
   cls.prototype.getScore = function(){ return this._score; }
   cls.prototype.getNecessaryScore = function(){ return this._necessaryScore; }
 
-  cls.prototype.resetActionCount = function(){
+  cls.prototype._resetStatuses = function(){
     this._actionCount = 1;
+    this._buyCount = 1;
+    this._coinCorrection = 0;
   }
+
   cls.prototype.getActionCount = function(){ return this._actionCount; }
   cls.prototype.setActionCount = function(value){ this._actionCount = value; }
   cls.prototype.modifyActionCount = function(value){ this._actionCount += value; }
 
-  cls.prototype.resetBuyCount = function(){
-    this._buyCount = 1;
-  }
   cls.prototype.getBuyCount = function(){ return this._buyCount; }
   cls.prototype.setBuyCount = function(value){ this._buyCount = value; }
   cls.prototype.modifyBuyCount = function(value){ this._buyCount += value; }
 
-  cls.prototype.resetCoinCorrection = function(){
-    this._coinCorrection = 0;
-  }
   cls.prototype.getCoin = function(){
     return 0 + this._coinCorrection;
   }
@@ -407,6 +405,15 @@ $a.Cards = (function(){
     _.times(count, function(){
       var card = self.pop();
       cards.add(card);
+    });
+  }
+
+  cls.prototype.dumpTo = function(cards){
+    var self = this;
+    var copiedCards = this._cards.slice(); // For index change by removing
+    _.each(copiedCards, function(card){
+      self.remove(card);
+      cards.stack(card);
     });
   }
 
@@ -604,6 +611,16 @@ $a.Hand = (function(){
     $a.talon.stack(card);
   }
 
+  cls.prototype.resetCards = function(){
+    var cardCount = 5;
+    this._cards.dumpTo($a.talon);
+    if ($a.deck.count() < cardCount) {
+      $a.talon.shuffle();
+      $a.talon.dealTo($a.deck, $a.talon.count());
+    }
+    $a.deck.dealTo(this._cards, cardCount);
+  }
+
   cls.create = function(){
     var obj = $a.Sprite.create.apply(this);
     __INITIALIZE(obj);
@@ -770,6 +787,7 @@ $a.init = function(){
   $a.deck.shuffle();
 
   $a.talon = $a.Cards.create();
+  $a.trash = $a.Cards.create();
 
   $a.screen = $a.Screen.create();
   $a.screen.draw();
@@ -785,7 +803,7 @@ $a.init = function(){
   $a.hand = $a.Hand.create();
   $a.screen.getView().append($a.hand.getView());
 
-  $a.deck.dealTo($a.hand.getCards(), 5);
+  $a.hand.resetCards();
   $a.hand.draw();
 
   $a.statusbar.draw();
