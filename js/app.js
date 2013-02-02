@@ -234,10 +234,17 @@ $a.Game = (function(){
     // TODO: カードしか選択できないので、
     //       全て行動カードの場合にキャンセル不可
     $.when(signaler).done(function(card){
+
       if (card.isActable()) {
+
+        $a.hand.throwCard(card);
+        $a.statusbar.draw();
+        $a.hand.draw();
+
         $.when(card.act()).done(function(){
           d.resolve(true);
         });
+
       } else {
         d.resolve(false);
       }
@@ -319,11 +326,20 @@ $a.Cards = (function(){
     this._cards.push(card);
   }
 
+  cls.prototype.stack = function(card){
+    this._cards.unshift(card);
+  }
+
   cls.prototype.pop = function(){
     return this._cards.pop();
   }
 
   cls.prototype.remove = function(card){
+    var idx = _.indexOf(this._cards, card);
+    if (idx < 0) {
+      throw Error('Cards.remove: Invalid situation');
+    }
+    this._cards.splice(idx, 1);
   }
 
   cls.prototype.shuffle = function(){
@@ -503,17 +519,44 @@ $a.Hand = (function(){
     var self = this;
     $a.Sprite.prototype.draw.apply(this);
 
-    var coords = $f.squaring($a.Card.SIZE, cls.SIZE, 10);
+    // FIXME:
+    // 一度手札に入って描画されたカードは、手札から無くなった後も
+    // 非表示でこの要素内に存在し、また手札に入ったら表示している。
+    //
+    // 本来はカードデータと同期させて、全削除と再描画を行うのが良いが
+    // 今回は card をオブジェクトとして使い回す設計であるため、
+    // card._view.remove をしてしまうと、jQueryのイベントが消えてしまう。
+    // そのために、この様な処理にした。
+    //
+    // 別解としては:
+    // a)捨て札や廃棄札用の隠し要素を作り、そこへappendToする
+    //   appendToならイベントは消えない
+    //   ..これが一番良さそう
+    // b)カードをオブジェクトで持たず、クラス名で持つ
+    //   ..何かわかり難くなりそうでNG
+    // c)イベントまで含めてカードの再描画処理をする
+    //   ..これが一番綺麗そうだが、_view再描画は基底クラスに入っているため
+    //     _viewではなくその中に一要素を作ってそれを書き直すことになる
+    this._view.find('.' + $c.CSS_PREFIX + 'card').each(function(i, e){
+      $(e).hide();
+    });
 
+    var coords = $f.squaring($a.Card.SIZE, cls.SIZE, 10);
     _.each(this._cards.getData(), function(card, idx){
       card.setPos(coords[idx]);
       card.draw();
+      card.getView().show();
       self.getView().append(card.getView());
     });
   }
 
   cls.prototype.getCards = function(){
     return this._cards;
+  }
+
+  cls.prototype.throwCard = function(card){
+    this._cards.remove(card);
+    $a.talon.stack(card);
   }
 
   cls.create = function(){
@@ -668,7 +711,7 @@ $a.init = function(){
   _.each(initialDeck, function(cardClassName){
     $a.deck.createCard(cardClassName);
   });
-  $a.deck.shuffle();
+  //$a.deck.shuffle();
 
   $a.talon = $a.Cards.create();
 
