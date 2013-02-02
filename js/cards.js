@@ -81,6 +81,21 @@ $a.$cards.Score6Card = (function(){
 }());
 
 
+$a.$cards.TechnicalbookCard = (function(){
+//{{{
+  var cls = function(){
+    this._cardTypes = ['action'];
+    this._title = '技術書';
+    this._cost = 2;
+    this._coinCorrection = 2;
+  }
+  $f.inherit(cls, new $a.Card(), $a.Card);
+  cls.prototype._act = cls.prototype._actBuffing;
+  return cls;
+//}}}
+}());
+
+
 $a.$cards.ReorganizationCard = (function(){
 //{{{
   var cls = function(){
@@ -120,8 +135,7 @@ $a.$cards.HealthcontrolCard = (function(){
     this._title = '体調管理';
     this._cost = 3;
     this._card = 1;
-    this._actionCount = 1;
-    this._score = 1;
+    this._actionCount = 2;
   }
   $f.inherit(cls, new $a.Card(), $a.Card);
   cls.prototype._act = cls.prototype._actBuffing;
@@ -139,7 +153,42 @@ $a.$cards.ModularizationCard = (function(){
     this._cost = 3;
   }
   $f.inherit(cls, new $a.Card(), $a.Card);
-  cls.prototype._act = cls.prototype._actBuffing;
+  cls.prototype._act = function(){
+    alert('4コスト以下のカードを1枚取得できます');
+    var d = $.Deferred();
+    var signaler = $.Deferred();
+    $a.field.waitChoice(signaler);
+    $.when(signaler).done(function(card){
+      if (card.getCost() <= 4)
+        $a.talon.addNewCard(card.className, { stack:true })
+        $a.statusbar.draw();
+      d.resolve();
+    });
+    return d;
+  }
+  return cls;
+//}}}
+}());
+
+
+$a.$cards.LogicalthinkingCard = (function(){
+//{{{
+  var cls = function(){
+    this._cardTypes = ['action'];
+    this._title = '論理的思考';
+    this._description = 'コスト: 3\n開発力+: 2\n山札を即座に捨て札にできる';
+    this._cost = 3;
+    this._coinCorrection = 2;
+  }
+  $f.inherit(cls, new $a.Card(), $a.Card);
+  cls.prototype._act = function(){
+    this._actBuffing();
+    if (confirm('山札を捨て札にしますか？')) {
+      $a.deck.dumpTo($a.talon);
+      $a.statusbar.draw();
+    }
+    return $.Deferred().resolve();
+  }
   return cls;
 //}}}
 }());
@@ -170,6 +219,22 @@ $a.$cards.Senseofresponsibility = (function(){
     this._actionCount = 1;
     this._buyCount = 1;
     this._coinCorrection = 1;
+  }
+  $f.inherit(cls, new $a.Card(), $a.Card);
+  cls.prototype._act = cls.prototype._actBuffing;
+  return cls;
+//}}}
+}());
+
+
+$a.$cards.ContinuousintegrationCard = (function(){
+//{{{
+  var cls = function(){
+    this._cardTypes = ['action'];
+    this._title = '継続的開発';
+    this._cost = 5;
+    this._card = 2;
+    this._actionCount = 1;
   }
   $f.inherit(cls, new $a.Card(), $a.Card);
   cls.prototype._act = cls.prototype._actBuffing;

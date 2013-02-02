@@ -160,7 +160,7 @@ $a.Game = (function(){
     this._necessaryScore = 25;
 
     this._turn = 0;
-    this._maxTurn = 10;
+    this._maxTurn = 12;
     /** 'action' || 'buy' */
     this._currentPhaseType = 'action';
 
@@ -316,11 +316,8 @@ $a.Game = (function(){
   cls.prototype._runWaitingBuySelection = function(){
 
     var d = $.Deferred();
-
     var signaler = $.Deferred();
-    _.each($a.field.getCards().getData(), function(card){
-      card.setSignaler(signaler);
-    });
+    $a.field.waitChoice(signaler);
 
     // TODO: 現在購入不可なものを選択するとキャンセルというUIになっている
     $.when(signaler).done(function(card){
@@ -568,12 +565,15 @@ $a.Field = (function(){
     'Coin1Card',
     'Coin2Card',
     'Coin3Card',
-    'ReorganizationCard',
+    'TechnicalbookCard',
+    //'ReorganizationCard',
     'ObjectorientedCard',
     'HealthcontrolCard',
+    'LogicalthinkingCard',
     'ModularizationCard',
     'ScalabilityCard',
-    'Senseofresponsibility'//,
+    'Senseofresponsibility',
+    'ContinuousintegrationCard'//,
   ]
 
   function __INITIALIZE(self){
@@ -597,6 +597,16 @@ $a.Field = (function(){
   cls.prototype.getCards = function(){
     return this._cards;
   }
+
+  // FIXME: Must standarize to Hand
+  cls.prototype.waitChoice = function(signaler){
+    _.each(this._cards.getData(), function(card){
+      card.setSignaler(signaler);
+    });
+  }
+
+  //cls.prototype.waitChoices = function(signaler){
+  //}
 
   cls.create = function(){
     var obj = $a.Sprite.create.apply(this);
@@ -870,8 +880,8 @@ $a.init = function(){
   $a.deck = $a.Cards.create();
   var initialDeck = [
     'Coin1Card', 'Coin1Card', 'Coin1Card', 'Coin1Card', 'Coin1Card', 'Coin1Card', 'Coin1Card',
-    'Score1Card', 'Score1Card', 'Score1Card',
-    'ObjectorientedCard', 'HealthcontrolCard', 'ModularizationCard', 'ScalabilityCard', 'Senseofresponsibility',
+    'Score1Card', 'Score1Card', 'Score1Card'//,
+    //'ObjectorientedCard', 'HealthcontrolCard', 'ModularizationCard', 'ScalabilityCard', 'Senseofresponsibility',
   ];
   _.each(initialDeck, function(cardClassName){
     $a.deck.addNewCard(cardClassName);
