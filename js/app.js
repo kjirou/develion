@@ -182,12 +182,18 @@ $a.Game = (function(){
 
       $.when(self._runTurn()).done(function(){
 
-        // TODO: Victory and game ending
+        if (self.summaryScore() >= self._necessaryScore) {
+          // Victory
+          alert('You won!');
+          return;
+        }
 
         if (self.getTurn() < self.getMaxTurn()) {
           setTimeout(process, 1);
         } else {
-          // TODO: Defeat and game ending
+          // Defeat
+          alert('You lost..');
+          return;
         }
 
       });
