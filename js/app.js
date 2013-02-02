@@ -157,7 +157,7 @@ $a.Game = (function(){
 //{{{
   var cls = function(){
 
-    this._necessaryScore = 30;
+    this._necessaryScore = 25;
 
     this._turn = 0;
     this._maxTurn = 10;
@@ -669,14 +669,17 @@ $a.Hand = (function(){
     $a.talon.stack(card);
   }
 
-  cls.prototype.resetCards = function(){
-    var cardCount = 5;
-    this._cards.dumpTo($a.talon);
+  cls.prototype.pullCards = function(cardCount){
     if ($a.deck.count() < cardCount) {
       $a.talon.shuffle();
       $a.talon.dealTo($a.deck, $a.talon.count());
     }
     $a.deck.dealTo(this._cards, cardCount);
+  }
+
+  cls.prototype.resetCards = function(){
+    this._cards.dumpTo($a.talon);
+    this.pullCards(5);
   }
 
   cls.create = function(){
@@ -812,9 +815,17 @@ $a.Card = (function(){
   }
 
   cls.prototype._actBuffing = function(){
+
     $a.game.modifyActionCount(this._actionCount);
     $a.game.modifyBuyCount(this._buyCount);
     $a.game.modifyCoinCorrection(this._coinCorrection);
+    if (this._card > 0) {
+      $a.hand.pullCards(this._card);
+    }
+
+    $a.statusbar.draw();
+    $a.hand.draw();
+
     return $.Deferred().resolve();
   }
 
