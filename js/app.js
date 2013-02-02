@@ -158,7 +158,6 @@ $a.Game = (function(){
 //{{{
   var cls = function(){
 
-    this._score = 0;
     this._necessaryScore = 30;
 
     this._turn = 0;
@@ -309,7 +308,29 @@ $a.Game = (function(){
   cls.prototype.getTurn = function(){ return this._turn; }
   cls.prototype.getMaxTurn = function(){ return this._maxTurn; }
 
-  cls.prototype.getScore = function(){ return this._score; }
+  cls.prototype._mergePlayersCardData = function(){
+    var cards = [];
+    _.each($a.deck.getData(), function(card){
+      cards.push(card);
+    });
+    _.each($a.talon.getData(), function(card){
+      cards.push(card);
+    });
+    _.each($a.hand.getCards().getData(), function(card){
+      cards.push(card);
+    });
+    return cards;
+  }
+
+  cls.prototype.getTotalCardCount = function(){
+    return this._mergePlayersCardData().length;
+  }
+
+  cls.prototype.summaryScore = function(){
+    return _.reduce(this._mergePlayersCardData(), function(memo, card){
+      return memo + card.getScore();
+    }, 0);
+  }
   cls.prototype.getNecessaryScore = function(){ return this._necessaryScore; }
 
   cls.prototype._resetStatuses = function(){
@@ -327,13 +348,14 @@ $a.Game = (function(){
   cls.prototype.modifyBuyCount = function(value){ this._buyCount += value; }
 
   cls.prototype.getCoin = function(){
-    return 0 + this._coinCorrection;
+    return this.summaryCoin() + this._coinCorrection;
+  }
+  cls.prototype.summaryCoin = function(){
+    return _.reduce($a.hand.getCards().getData(), function(memo, card){
+      return memo + card.getCoin();
+    }, 0);
   }
   cls.prototype.modifyCoinCorrection = function(value){ this._coinCorrection += value; }
-
-  cls.prototype.getTotalCardCount = function(){
-    return $a.hand.getCards().count() + $a.deck.count() + $a.talon.count();
-  }
 
   cls.create = function(){
     var obj = new this();
@@ -479,7 +501,7 @@ $a.Statusbar = (function(){
 
     var t = '';
     t += $f.format('期間: {0}/{1}', $a.game.getTurn(), $a.game.getMaxTurn());
-    t += $f.format(', 進捗: {0}/{1}', $a.game.getScore(), $a.game.getNecessaryScore());
+    t += $f.format(', 進捗: {0}/{1}', $a.game.summaryScore(), $a.game.getNecessaryScore());
     t += $f.format(', 行動回数: {0}', $a.game.getActionCount());
     t += $f.format(', 開発回数: {0}', $a.game.getBuyCount());
     t += $f.format(', 開発力: {0}', $a.game.getCoin());
@@ -642,6 +664,7 @@ $a.Card = (function(){
     this._card = 0;
     this._actionCount = 0;
     this._buyCount = 0;
+    this._coinCorrection = 0;
     this._coin = 0;
 
     this.className = undefined;
@@ -699,20 +722,23 @@ $a.Card = (function(){
     var lines = [];
 
     lines.push($f.format('コスト: {0}', this._cost));
-    if (this._card !== 0) {
-      lines.push($f.format('カード: {0}', this._card));
-    }
-    if (this._actionCount !== 0) {
-      lines.push($f.format('行動回数: {0}', this._actionCount));
-    }
-    if (this._buyCount !== 0) {
-      lines.push($f.format('開発回数: {0}', this._buyCount));
-    }
     if (this._coin !== 0) {
       lines.push($f.format('開発力: {0}', this._coin));
     }
     if (this._score !== 0) {
       lines.push($f.format('進捗: {0}', this._score));
+    }
+    if (this._card !== 0) {
+      lines.push($f.format('カード+: {0}', this._card));
+    }
+    if (this._actionCount !== 0) {
+      lines.push($f.format('行動回数+: {0}', this._actionCount));
+    }
+    if (this._buyCount !== 0) {
+      lines.push($f.format('開発回数+: {0}', this._buyCount));
+    }
+    if (this._coinCorrection !== 0) {
+      lines.push($f.format('開発力+: {0}', this._coinCorrection));
     }
     return lines.join('\n');
   }
@@ -736,11 +762,13 @@ $a.Card = (function(){
   cls.prototype._actBuffing = function(){
     $a.game.modifyActionCount(this._actionCount);
     $a.game.modifyBuyCount(this._buyCount);
-    $a.game.modifyCoinCorrection(this._coin);
+    $a.game.modifyCoinCorrection(this._coinCorrection);
     return $.Deferred().resolve();
   }
 
   cls.prototype.getCost = function(){ return this._cost; }
+  cls.prototype.getScore = function(){ return this._score; }
+  cls.prototype.getCoin = function(){ return this._coin; }
 
   cls.prototype.isBuyable = function(){
     return this._cost <= $a.game.getCoin();
@@ -773,13 +801,9 @@ $a.init = function(){
 
   $a.deck = $a.Cards.create();
   var initialDeck = [
-    //'Coin1Card', 'Coin1Card', 'Coin1Card', 'Coin1Card', 'Coin1Card', 'Coin1Card', 'Coin1Card',
-    //'Score1Card', 'Score1Card', 'Score1Card',
-    'ObjectorientedCard',
-    'HealthcontrolCard',
-    'ModularizationCard',
-    'ScalabilityCard',
-    'Senseofresponsibility',
+    'Coin1Card', 'Coin1Card', 'Coin1Card', 'Coin1Card', 'Coin1Card', 'Coin1Card', 'Coin1Card',
+    'Score1Card', 'Score1Card', 'Score1Card',
+    'ObjectorientedCard', 'HealthcontrolCard', 'ModularizationCard', 'ScalabilityCard', 'Senseofresponsibility',
   ];
   _.each(initialDeck, function(cardClassName){
     $a.deck.addNewCard(cardClassName);

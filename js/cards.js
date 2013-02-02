@@ -95,7 +95,7 @@ $a.$cards.ObjectorientedCard = (function(){
   var cls = function(){
     this._title = 'OOP';
     this._cost = 3;
-    this._coin = 2;
+    this._coinCorrection = 2;
     this._buyCount = 1;
   }
   $f.inherit(cls, new $a.Card(), $a.Card);
@@ -125,7 +125,7 @@ $a.$cards.ModularizationCard = (function(){
 //{{{
   var cls = function(){
     this._title = 'モジュール化';
-    this._description = 'コスト: 3\n4コストまでのカードを獲得する';
+    this._description = 'コスト: 3\n4コストまでのカードを獲得';
     this._cost = 3;
   }
   $f.inherit(cls, new $a.Card(), $a.Card);
@@ -157,7 +157,7 @@ $a.$cards.Senseofresponsibility = (function(){
     this._card = 1;
     this._actionCount = 1;
     this._buyCount = 1;
-    this._coin = 1;
+    this._coinCorrection = 1;
   }
   $f.inherit(cls, new $a.Card(), $a.Card);
   cls.prototype._act = cls.prototype._actBuffing;
