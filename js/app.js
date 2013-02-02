@@ -193,9 +193,7 @@ $a.Game = (function(){
 
   cls.prototype._runActionPhase = function(){
     var self = this;
-
     var phaseEnd = $.Deferred();
-    var doneCount = 0;
 
     var process = function(){
       $.when(
@@ -254,11 +252,57 @@ $a.Game = (function(){
   }
 
   cls.prototype._runBuyPhase = function(){
-    var d = $.Deferred();
-    return d;
+    var self = this;
+    var phaseEnd = $.Deferred();
+
+    var process = function(){
+      $.when(
+        self._runWaitingBuySelection()
+      ).done(function(isDone){
+
+        if (isDone) {
+          $a.game.modifyBuyCount(-1);
+        } else {
+          $a.game.setBuyCount(0);
+        }
+        $a.statusbar.draw();
+
+        if ($a.game.getBuyCount() > 0) {
+          setTimeout(process, 1);
+        } else {
+          phaseEnd.resolve();
+        }
+
+      });
+    }
+    setTimeout(process, 1);
+
+    return phaseEnd;
   }
 
   cls.prototype._runWaitingBuySelection = function(){
+
+    var d = $.Deferred();
+
+    var signaler = $.Deferred();
+    _.each($a.field.getCards().getData(), function(card){
+      card.setSignaler(signaler);
+    });
+
+    // TODO: 現在購入不可なものを選択するとキャンセルというUIになっている
+    $.when(signaler).done(function(card){
+
+      if (card.isBuyable()) {
+        $a.game.modifyCoinCorrection(-card.getCost());
+        $a.talon.addNewCard(card.className, { stack:true });
+        $a.statusbar.draw();
+        d.resolve(true);
+      } else {
+        d.resolve(false);
+      }
+    });
+
+    return d;
   }
 
   cls.prototype.getTurn = function(){ return this._turn; }
@@ -317,9 +361,17 @@ $a.Cards = (function(){
     return this._cards;
   }
 
-  cls.prototype.createCard = function(cardClassName){
+  cls.prototype.addNewCard = function(cardClassName, options){
+    var opts = _.extend({
+      stack: false
+    }, options || {});
+
     var card = $a.$cards[cardClassName].create();
-    this._cards.push(card);
+    if (opts.stack) {
+      this._cards.unshift(card);
+    } else {
+      this._cards.push(card);
+    }
   }
 
   cls.prototype.add = function(card){
@@ -454,6 +506,9 @@ $a.Field = (function(){
     'Score1Card',
     'Score3Card',
     'Score6Card',
+    'Coin1Card',
+    'Coin2Card',
+    'Coin3Card',
     'ReorganizationCard',
     'ObjectorientedCard',
     'HealthcontrolCard',
@@ -463,12 +518,10 @@ $a.Field = (function(){
   ]
 
   function __INITIALIZE(self){
-    self._view.css({
-    });
 
     self._cards = $a.Cards.create();
     _.each(cls.__SALES_CARDS, function(cardClassName){
-      self._cards.createCard(cardClassName);
+      self._cards.addNewCard(cardClassName);
     });
 
     var coords = $f.squaring($a.Card.SIZE, cls.SIZE, 10);
@@ -479,13 +532,9 @@ $a.Field = (function(){
     });
   }
 
-  //cls.prototype.draw = function(){
-  //  $a.Sprite.prototype.draw.apply(this);
-  //}
-
-  //cls.prototype.getCards = function(){
-  //  return this._cards;
-  //}
+  cls.prototype.getCards = function(){
+    return this._cards;
+  }
 
   cls.create = function(){
     var obj = $a.Sprite.create.apply(this);
@@ -501,7 +550,7 @@ $a.Field = (function(){
 $a.Hand = (function(){
 //{{{
   var cls = function(){
-    this._cards = undefined;
+    this._cards = $a.Cards.create();
   }
   $f.inherit(cls, new $a.Sprite(), $a.Sprite);
 
@@ -509,10 +558,6 @@ $a.Hand = (function(){
   cls.SIZE = [$a.Screen.SIZE[0], 300];
 
   function __INITIALIZE(self){
-    self._view.css({
-    });
-
-    self._cards = $a.Cards.create();
   }
 
   cls.prototype.draw = function(){
@@ -582,6 +627,8 @@ $a.Card = (function(){
     this._buyCount = 0;
     this._coin = 0;
 
+    this.className = undefined;
+
     // For signaling mousedown event to outside
     // Deferred object || null
     this._signaler = null;
@@ -592,6 +639,9 @@ $a.Card = (function(){
   cls.SIZE = [80, 120];
 
   function __INITIALIZE(self){
+
+    self.className = $f.getMyName($a.$cards, self.__myClass__);
+
     self._view.css({
         backgroundColor: '#FFFF00'
       }).addClass($c.CSS_PREFIX + 'card')
@@ -673,6 +723,12 @@ $a.Card = (function(){
     return $.Deferred().resolve();
   }
 
+  cls.prototype.getCost = function(){ return this._cost; }
+
+  cls.prototype.isBuyable = function(){
+    return this._cost <= $a.game.getCoin();
+  }
+
   function __ONMOUSEDOWN(evt){
     var self = evt.data.self;
     if (self._signaler !== null && self._signaler.state() === 'pending') {
@@ -709,9 +765,9 @@ $a.init = function(){
     'Senseofresponsibility',
   ];
   _.each(initialDeck, function(cardClassName){
-    $a.deck.createCard(cardClassName);
+    $a.deck.addNewCard(cardClassName);
   });
-  //$a.deck.shuffle();
+  $a.deck.shuffle();
 
   $a.talon = $a.Cards.create();
 

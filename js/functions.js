@@ -67,6 +67,18 @@ $f.inherit = function(SubClass, superObj, SuperClass){
   $f.mixin(SubClass, null, SuperClass);
 }
 
+$f.getMyNames = function(scope, obj){
+    var list = [], k;
+    for (k in scope) { if (obj === scope[k]) list.push(k) };
+    return list;
+}
+
+$f.getMyName = function(scope, obj){
+    var names = $f.getMyNames(scope, obj);
+    if (names.length !== 1) throw new Error('$f.getMyName: Invalid situation');
+    return names[0];
+}
+
 /**
  * Return coordinates that is created by dividing large square by same small square
  *
