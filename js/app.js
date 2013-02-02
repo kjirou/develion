@@ -22,7 +22,6 @@ $c = {
 };
 
 
-
 /**
  * Application
  */
@@ -175,6 +174,69 @@ $a.Game = (function(){
   }
 
   function __INITIALIZE(self){
+  }
+
+  cls.prototype.run = function(){
+  }
+
+  cls.prototype._runTurn = function(){
+    var self = this;
+    return $.Deferred().resolve().then(function(){
+      return self._runActionPhase();
+    }).then(function(){
+      $d('Ended action phase');
+      return self._runBuyPhase();
+    }).then(function(){
+      $d('Ended buy phase');
+    });
+
+    // 行動回数などの初期化処理
+  }
+
+  cls.prototype._runActionPhase = function(){
+    var self = this;
+
+    var phaseEnd = $.Deferred();
+    var doneCount = 0;
+
+    var process = function(){
+      $.when(
+        self._runWaitingActionSelection()
+      ).done(function(actionResult){
+
+        $d(actionResult);
+        doneCount += 1;
+        //if (doneResult) {
+        //  doneCount += 1;
+        //}
+
+        if ($a.game.getActionCount() > doneCount) {
+          setTimeout(process, 1);
+        } else {
+          phaseEnd.resolve();
+        }
+
+      });
+    }
+    setTimeout(process, 1);
+
+    return phaseEnd;
+  }
+
+  cls.prototype._runWaitingActionSelection = function(){
+    var d = $.Deferred();
+    setTimeout(function(){
+      d.resolve({a:1,b:2,c:3});
+    }, 1000);
+    return d;
+  }
+
+  cls.prototype._runBuyPhase = function(){
+    var d = $.Deferred();
+    return d;
+  }
+
+  cls.prototype._runWaitingBuySelection = function(){
   }
 
   cls.prototype.getTurn = function(){ return this._turn; }
@@ -563,6 +625,8 @@ $a.init = function(){
   $a.hand.draw();
 
   $a.statusbar.draw();
+
+  $a.game._runTurn();
 
 //}}}
 }
