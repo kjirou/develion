@@ -163,17 +163,15 @@ $a.Game = (function(){
     this._turn = 0;
     this._maxTurn = 10;
 
-    this._baseActionCount = 1;
-    this._modActionCount = 0;
-
-    this._baseBuyCount = 1;
-    this._modBuyCount = 0;
-
-    this._baseCoin = 1;
-    this._modCoin = 0;
+    this._actionCount = undefined;
+    this._buyCount = undefined;
+    this._coinCorrection = undefined;
   }
 
   function __INITIALIZE(self){
+    self.resetActionCount();
+    self.resetBuyCount();
+    self.resetCoinCorrection();
   }
 
   cls.prototype.run = function(){
@@ -202,15 +200,16 @@ $a.Game = (function(){
     var process = function(){
       $.when(
         self._runWaitingActionSelection()
-      ).done(function(actionResult){
+      ).done(function(isDoneAction){
 
-        $d(actionResult);
-        doneCount += 1;
-        //if (doneResult) {
-        //  doneCount += 1;
-        //}
+        if (isDoneAction) {
+          $a.game.modifyActionCount(-1);
+        } else {
+          $a.game.setActionCount(0);
+        }
+        $a.statusbar.draw();
 
-        if ($a.game.getActionCount() > doneCount) {
+        if ($a.game.getActionCount() > 0) {
           setTimeout(process, 1);
         } else {
           phaseEnd.resolve();
@@ -224,10 +223,26 @@ $a.Game = (function(){
   }
 
   cls.prototype._runWaitingActionSelection = function(){
+
     var d = $.Deferred();
-    setTimeout(function(){
-      d.resolve({a:1,b:2,c:3});
-    }, 1000);
+
+    var signaler = $.Deferred();
+    _.each($a.hand.getCards().getData(), function(card){
+      card.setSignaler(signaler);
+    });
+
+    // TODO: カードしか選択できないので、
+    //       全て行動カードの場合にキャンセル不可
+    $.when(signaler).done(function(card){
+      if (card.isActable()) {
+        $.when(card.act()).done(function(){
+          d.resolve(true);
+        });
+      } else {
+        d.resolve(false);
+      }
+    });
+
     return d;
   }
 
@@ -245,17 +260,27 @@ $a.Game = (function(){
   cls.prototype.getScore = function(){ return this._score; }
   cls.prototype.getNecessaryScore = function(){ return this._necessaryScore; }
 
-  cls.prototype.getActionCount = function(){
-    return this._baseActionCount + this._modActionCount;
+  cls.prototype.resetActionCount = function(){
+    this._actionCount = 1;
   }
+  cls.prototype.getActionCount = function(){ return this._actionCount; }
+  cls.prototype.setActionCount = function(value){ this._actionCount = value; }
+  cls.prototype.modifyActionCount = function(value){ this._actionCount += value; }
 
-  cls.prototype.getBuyCount = function(){
-    return this._baseBuyCount + this._modBuyCount;
+  cls.prototype.resetBuyCount = function(){
+    this._buyCount = 1;
   }
+  cls.prototype.getBuyCount = function(){ return this._buyCount; }
+  cls.prototype.setBuyCount = function(value){ this._buyCount = value; }
+  cls.prototype.modifyBuyCount = function(value){ this._buyCount += value; }
 
+  cls.prototype.resetCoinCorrection = function(){
+    this._coinCorrection = 0;
+  }
   cls.prototype.getCoin = function(){
-    return this._baseCoin + this._modCoin;
+    return 0 + this._coinCorrection;
   }
+  cls.prototype.modifyCoinCorrection = function(value){ this._coinCorrection += value; }
 
   cls.prototype.getTotalCardCount = function(){
     return $a.hand.getCards().count() + $a.deck.count() + $a.talon.count();
@@ -415,10 +440,10 @@ $a.Field = (function(){
     'Score6Card',
     'ReorganizationCard',
     'ObjectorientedCard',
-    'HealthCard',
+    'HealthcontrolCard',
     'ModularizationCard',
     'ScalabilityCard',
-    'LeadershipCard'//,
+    'Senseofresponsibility'//,
   ]
 
   function __INITIALIZE(self){
@@ -481,7 +506,6 @@ $a.Hand = (function(){
     var coords = $f.squaring($a.Card.SIZE, cls.SIZE, 10);
 
     _.each(this._cards.getData(), function(card, idx){
-      card.getView().remove();
       card.setPos(coords[idx]);
       card.draw();
       self.getView().append(card.getView());
@@ -514,6 +538,10 @@ $a.Card = (function(){
     this._actionCount = 0;
     this._buyCount = 0;
     this._coin = 0;
+
+    // For signaling mousedown event to outside
+    // Deferred object || null
+    this._signaler = null;
   }
   $f.inherit(cls, new $a.Sprite(), $a.Sprite);
 
@@ -522,8 +550,9 @@ $a.Card = (function(){
 
   function __INITIALIZE(self){
     self._view.css({
-      backgroundColor: '#FFFF00'
-    }).addClass($c.CSS_PREFIX + 'card');
+        backgroundColor: '#FFFF00'
+      }).addClass($c.CSS_PREFIX + 'card')
+      .on('mousedown', {self:self}, __ONMOUSEDOWN);
 
     self._titleView = $('<div />').css({
       width: cls.SIZE[0],
@@ -578,6 +607,37 @@ $a.Card = (function(){
     return lines.join('\n');
   }
 
+  cls.prototype.setSignaler = function(deferredObject){
+    this._signaler = deferredObject;
+  }
+
+  /** null = Can't act
+      || func = Custom action. Must to return resolved deferred */
+  cls.prototype._act = null;
+
+  cls.prototype.act = function(){
+    return this._act();
+  }
+
+  cls.prototype.isActable = function(){
+    return this._act !== null;
+  }
+
+  cls.prototype._actBuffing = function(){
+    $a.game.modifyActionCount(this._actionCount);
+    $a.game.modifyBuyCount(this._buyCount);
+    $a.game.modifyCoinCorrection(this._coin);
+    return $.Deferred().resolve();
+  }
+
+  function __ONMOUSEDOWN(evt){
+    var self = evt.data.self;
+    if (self._signaler !== null && self._signaler.state() === 'pending') {
+      self._signaler.resolve(self);
+    }
+    return false;
+  }
+
   cls.create = function(){
     var obj = $a.Sprite.create.apply(this);
     __INITIALIZE(obj);
@@ -597,8 +657,13 @@ $a.init = function(){
 
   $a.deck = $a.Cards.create();
   var initialDeck = [
-    'Coin1Card', 'Coin1Card', 'Coin1Card', 'Coin1Card', 'Coin1Card', 'Coin1Card', 'Coin1Card',
-    'Score1Card', 'Score1Card', 'Score1Card'//,
+    //'Coin1Card', 'Coin1Card', 'Coin1Card', 'Coin1Card', 'Coin1Card', 'Coin1Card', 'Coin1Card',
+    //'Score1Card', 'Score1Card', 'Score1Card',
+    'ObjectorientedCard',
+    'HealthcontrolCard',
+    'ModularizationCard',
+    'ScalabilityCard',
+    'Senseofresponsibility',
   ];
   _.each(initialDeck, function(cardClassName){
     $a.deck.createCard(cardClassName);

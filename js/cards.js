@@ -84,6 +84,7 @@ $a.$cards.ReorganizationCard = (function(){
     this._actionCount = 1;
   }
   $f.inherit(cls, new $a.Card(), $a.Card);
+  cls.prototype._act = cls.prototype._actBuffing;
   return cls;
 //}}}
 }());
@@ -98,12 +99,13 @@ $a.$cards.ObjectorientedCard = (function(){
     this._buyCount = 1;
   }
   $f.inherit(cls, new $a.Card(), $a.Card);
+  cls.prototype._act = cls.prototype._actBuffing;
   return cls;
 //}}}
 }());
 
 
-$a.$cards.HealthCard = (function(){
+$a.$cards.HealthcontrolCard = (function(){
 //{{{
   var cls = function(){
     this._title = '体調管理';
@@ -113,6 +115,7 @@ $a.$cards.HealthCard = (function(){
     this._score = 1;
   }
   $f.inherit(cls, new $a.Card(), $a.Card);
+  cls.prototype._act = cls.prototype._actBuffing;
   return cls;
 //}}}
 }());
@@ -126,6 +129,7 @@ $a.$cards.ModularizationCard = (function(){
     this._cost = 3;
   }
   $f.inherit(cls, new $a.Card(), $a.Card);
+  cls.prototype._act = cls.prototype._actBuffing;
   return cls;
 //}}}
 }());
@@ -139,12 +143,13 @@ $a.$cards.ScalabilityCard = (function(){
     this._card = 3;
   }
   $f.inherit(cls, new $a.Card(), $a.Card);
+  cls.prototype._act = cls.prototype._actBuffing;
   return cls;
 //}}}
 }());
 
 
-$a.$cards.LeadershipCard = (function(){
+$a.$cards.Senseofresponsibility = (function(){
 //{{{
   var cls = function(){
     this._title = '責任感';
@@ -155,6 +160,7 @@ $a.$cards.LeadershipCard = (function(){
     this._coin = 1;
   }
   $f.inherit(cls, new $a.Card(), $a.Card);
+  cls.prototype._act = cls.prototype._actBuffing;
   return cls;
 //}}}
 }());
