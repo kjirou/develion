@@ -173,11 +173,31 @@ $a.Game = (function(){
   }
 
   cls.prototype.run = function(){
+    var self = this;
+    var process = function(){
+
+      self._turn += 1;
+      $a.statusbar.draw();
+
+      $.when(self._runTurn()).done(function(){
+
+        // TODO: Victory and game ending
+
+        if (self.getTurn() < self.getMaxTurn()) {
+          setTimeout(process, 1);
+        } else {
+          // TODO: Defeat and game ending
+        }
+
+      });
+    }
+    setTimeout(process, 1);
   }
 
   cls.prototype._runTurn = function(){
     var self = this;
-    return $.Deferred().resolve().then(function(){
+    var d = $.Deferred();
+    $.Deferred().resolve().then(function(){
       return self._runActionPhase();
     }).then(function(){
       $d('Ended action phase');
@@ -188,7 +208,9 @@ $a.Game = (function(){
       $a.hand.resetCards();
       $a.statusbar.draw();
       $a.hand.draw();
+      d.resolve();
     });
+    return d;
   }
 
   cls.prototype._runActionPhase = function(){
@@ -826,7 +848,7 @@ $a.init = function(){
 
   $a.statusbar.draw();
 
-  $a.game._runTurn();
+  $a.game.run();
 
 //}}}
 }
