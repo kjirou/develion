@@ -310,15 +310,9 @@ $a.Game = (function(){
 
   cls.prototype._mergePlayersCardData = function(){
     var cards = [];
-    _.each($a.deck.getData(), function(card){
-      cards.push(card);
-    });
-    _.each($a.talon.getData(), function(card){
-      cards.push(card);
-    });
-    _.each($a.hand.getCards().getData(), function(card){
-      cards.push(card);
-    });
+    cards = cards.concat($a.deck.getData())
+    cards = cards.concat($a.talon.getData())
+    cards = cards.concat($a.hand.getCards().getData())
     return cards;
   }
 
