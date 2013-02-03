@@ -1,4 +1,3 @@
-// vim: set foldmethod=marker :
 /**
  * Functions
  */
@@ -133,6 +132,7 @@ $f.argumentsToArray = function(args){
  * Classes
  */
 $f.ReceivableOptionsMixin = (function(){
+//{{{
     var cls = function(){
         this.__options = undefined;
     };
@@ -166,6 +166,92 @@ $f.ReceivableOptionsMixin = (function(){
         return this.__options[key];
     };
     return cls;
+//}}}
+}());
+
+
+$f.Sprite = (function(){
+//{{{
+    var cls = function(){
+        this._view = undefined;
+        this._pos = undefined;
+        this._size = undefined;
+        this._zIndex = 0;
+        this._elementId = null;
+        this._objectId = undefined;
+    };
+    $f.mixin(cls, new $f.ReceivableOptionsMixin());
+
+    // Default settings, now this is used only for initialization
+    cls.POS = [undefined, undefined];
+    cls.SIZE = [undefined, undefined];
+
+    var __CURRENT_OBJECT_ID = 1;
+    var __OBJECTS = {};
+
+    function __INITIALIZE(self){
+        self._pos = self.__myClass__.POS.slice();
+        self._size = self.__myClass__.SIZE.slice();
+
+        self._objectId = __CURRENT_OBJECT_ID;
+        if (self._elementId === null) {
+            self._elementId = $c.CSS_PREFIX + 'sprite-' + self._objectId;
+        }
+
+        self._view = $('<div />').attr({ id:self._elementId }).addClass('sprite');
+
+        __OBJECTS[self._elementId] = self;
+        __CURRENT_OBJECT_ID += 1;
+    };
+
+    cls.prototype.draw = function(){
+        this._view.css({
+            // 'position:absolute' must not be defined in CSS.
+            //   because jQuery.ui.draggable add 'position:relative' to it
+            // Ref) jquery-ui-1.9.2.custom.js#L5495
+            position: 'absolute',
+            top: this.getTop(),
+            left: this.getLeft(),
+            width: this.getWidth(),
+            height: this.getHeight(),
+            zIndex: this._zIndex
+        });
+    };
+
+    cls.prototype.drawZIndexOnly = function(zIndex){
+        this._zIndex = zIndex;
+        this._view.css({ zIndex:zIndex });
+    };
+
+    cls.prototype.getView = function(){ return this._view };
+
+    cls.prototype.setPos = function(v){ this._pos = v };
+    cls.prototype.getPos = function(){ return this._pos };
+    cls.prototype.getTop = function(){ return this._pos[0] };
+    cls.prototype.getLeft = function(){ return this._pos[1] };
+
+    cls.prototype.setSize = function(v){ this._size = v };
+    cls.prototype.getSize = function(){ return this._size };
+    cls.prototype.getWidth = function(){ return this._size[0] };
+    cls.prototype.getHeight = function(){ return this._size[1] };
+
+    cls.prototype.setZIndex = function(v){ this._zIndex = v };
+
+    cls.getByElementId = function(elementId){
+        var obj = __OBJECTS[elementId];
+        if (obj === undefined) throw new Error('Sprite.getByElementId: Not found object');
+        return obj;
+    }
+
+    cls.create = function(options){
+        var obj = new this();
+        obj.setOptions(options);
+        __INITIALIZE(obj);
+        return obj;
+    }
+
+    return cls;
+//}}}
 }());
 
 

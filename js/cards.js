@@ -187,7 +187,6 @@ $a.$cards.LogicalthinkingCard = (function(){
       $a.deck.dumpTo($a.talon);
       $a.statusbar.draw();
     }
-    return $.Deferred().resolve();
   }
   return cls;
 //}}}

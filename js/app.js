@@ -49,91 +49,6 @@ $a = {
 };
 
 
-$a.Sprite = (function(){
-//{{{
-    var cls = function(){
-        this._view = undefined;
-        this._pos = undefined;
-        this._size = undefined;
-        this._zIndex = 0;
-        this._elementId = null;
-        this._objectId = undefined;
-    };
-    $f.mixin(cls, new $f.ReceivableOptionsMixin());
-
-    // Default settings, now this is used only for initialization
-    cls.POS = [undefined, undefined];
-    cls.SIZE = [undefined, undefined];
-
-    var __CURRENT_OBJECT_ID = 1;
-    var __OBJECTS = {};
-
-    function __INITIALIZE(self){
-        self._pos = self.__myClass__.POS.slice();
-        self._size = self.__myClass__.SIZE.slice();
-
-        self._objectId = __CURRENT_OBJECT_ID;
-        if (self._elementId === null) {
-            self._elementId = $c.CSS_PREFIX + 'sprite-' + self._objectId;
-        }
-
-        self._view = $('<div />').attr({ id:self._elementId }).addClass('sprite');
-
-        __OBJECTS[self._elementId] = self;
-        __CURRENT_OBJECT_ID += 1;
-    };
-
-    cls.prototype.draw = function(){
-        this._view.css({
-            // 'position:absolute' must not be defined in CSS.
-            //   because jQuery.ui.draggable add 'position:relative' to it
-            // Ref) jquery-ui-1.9.2.custom.js#L5495
-            position: 'absolute',
-            top: this.getTop(),
-            left: this.getLeft(),
-            width: this.getWidth(),
-            height: this.getHeight(),
-            zIndex: this._zIndex
-        });
-    };
-
-    cls.prototype.drawZIndexOnly = function(zIndex){
-        this._zIndex = zIndex;
-        this._view.css({ zIndex:zIndex });
-    };
-
-    cls.prototype.getView = function(){ return this._view };
-
-    cls.prototype.setPos = function(v){ this._pos = v };
-    cls.prototype.getPos = function(){ return this._pos };
-    cls.prototype.getTop = function(){ return this._pos[0] };
-    cls.prototype.getLeft = function(){ return this._pos[1] };
-
-    cls.prototype.setSize = function(v){ this._size = v };
-    cls.prototype.getSize = function(){ return this._size };
-    cls.prototype.getWidth = function(){ return this._size[0] };
-    cls.prototype.getHeight = function(){ return this._size[1] };
-
-    cls.prototype.setZIndex = function(v){ this._zIndex = v };
-
-    cls.getByElementId = function(elementId){
-        var obj = __OBJECTS[elementId];
-        if (obj === undefined) throw new Error('Sprite.getByElementId: Not found object');
-        return obj;
-    }
-
-    cls.create = function(options){
-        var obj = new this();
-        obj.setOptions(options);
-        __INITIALIZE(obj);
-        return obj;
-    }
-
-    return cls;
-//}}}
-}());
-
-
 $a.Player = (function(){
 //{{{
   var cls = function(){
@@ -480,7 +395,7 @@ $a.Screen = (function(){
 //{{{
   var cls = function(){
   }
-  $f.inherit(cls, new $a.Sprite(), $a.Sprite);
+  $f.inherit(cls, new $f.Sprite(), $f.Sprite);
 
   cls.ZINDEXES = {
   }
@@ -495,7 +410,7 @@ $a.Screen = (function(){
   }
 
   cls.create = function(){
-    var obj = $a.Sprite.create.apply(this);
+    var obj = $f.Sprite.create.apply(this);
     __INITIALIZE(obj);
     return obj;
   }
@@ -509,7 +424,7 @@ $a.Statusbar = (function(){
 //{{{
   var cls = function(){
   }
-  $f.inherit(cls, new $a.Sprite(), $a.Sprite);
+  $f.inherit(cls, new $f.Sprite(), $f.Sprite);
 
   cls.POS = [0, 0];
   cls.SIZE = [$a.Screen.SIZE[0], 32];
@@ -523,7 +438,7 @@ $a.Statusbar = (function(){
   }
 
   cls.prototype.draw = function(){
-    $a.Sprite.prototype.draw.apply(this);
+    $f.Sprite.prototype.draw.apply(this);
 
     var t = '';
     t += $f.format('期間: {0}/{1}', $a.game.getTurn(), $a.game.getMaxTurn());
@@ -538,7 +453,7 @@ $a.Statusbar = (function(){
   }
 
   cls.create = function(){
-    var obj = $a.Sprite.create.apply(this);
+    var obj = $f.Sprite.create.apply(this);
     __INITIALIZE(obj);
     return obj;
   };
@@ -553,7 +468,7 @@ $a.Field = (function(){
   var cls = function(){
     this._cards = $a.Cards.create();
   }
-  $f.inherit(cls, new $a.Sprite(), $a.Sprite);
+  $f.inherit(cls, new $f.Sprite(), $f.Sprite);
 
   cls.POS = [32, 0];
   cls.SIZE = [$a.Screen.SIZE[0], 268];
@@ -609,7 +524,7 @@ $a.Field = (function(){
   //}
 
   cls.create = function(){
-    var obj = $a.Sprite.create.apply(this);
+    var obj = $f.Sprite.create.apply(this);
     __INITIALIZE(obj);
     return obj;
   };
@@ -624,7 +539,7 @@ $a.Hand = (function(){
   var cls = function(){
     this._cards = $a.Cards.create();
   }
-  $f.inherit(cls, new $a.Sprite(), $a.Sprite);
+  $f.inherit(cls, new $f.Sprite(), $f.Sprite);
 
   cls.POS = [330, 20];
   cls.SIZE = [710, 250];
@@ -637,7 +552,7 @@ $a.Hand = (function(){
 
   cls.prototype.draw = function(){
     var self = this;
-    $a.Sprite.prototype.draw.apply(this);
+    $f.Sprite.prototype.draw.apply(this);
 
     // FIXME:
     // 一度手札に入って描画されたカードは、手札から無くなった後も
@@ -693,7 +608,7 @@ $a.Hand = (function(){
   }
 
   cls.create = function(){
-    var obj = $a.Sprite.create.apply(this);
+    var obj = $f.Sprite.create.apply(this);
     __INITIALIZE(obj);
     return obj;
   };
@@ -726,7 +641,7 @@ $a.Card = (function(){
     // Deferred object || null
     this._signaler = null;
   }
-  $f.inherit(cls, new $a.Sprite(), $a.Sprite);
+  $f.inherit(cls, new $f.Sprite(), $f.Sprite);
 
   cls.POS = [0, 0];
   cls.SIZE = [80, 120];
@@ -759,7 +674,7 @@ $a.Card = (function(){
   }
 
   cls.prototype.draw = function(){
-    $a.Sprite.prototype.draw.apply(this);
+    $f.Sprite.prototype.draw.apply(this);
 
     var bgColor;
     if (this.getCardType() === 'victory') {
@@ -812,12 +727,15 @@ $a.Card = (function(){
     this._signaler = deferredObject;
   }
 
-  /** null = Can't act
-      || func = Custom action. Must to return resolved deferred */
+  /**
+   * null = It is not actable.
+   * func = Custom action.
+   *        It must return resolved deferred, if it include async process.
+   */
   cls.prototype._act = null;
 
   cls.prototype.act = function(){
-    return this._act();
+    return this._act() || $.Deferred().resolve();
   }
 
   cls.prototype.isActable = function(){
@@ -835,8 +753,6 @@ $a.Card = (function(){
 
     $a.statusbar.draw();
     $a.hand.draw();
-
-    return $.Deferred().resolve();
   }
 
   cls.prototype.getCardType = function(){
@@ -861,7 +777,7 @@ $a.Card = (function(){
   }
 
   cls.create = function(){
-    var obj = $a.Sprite.create.apply(this);
+    var obj = $f.Sprite.create.apply(this);
     __INITIALIZE(obj);
     return obj;
   };
